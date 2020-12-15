@@ -43,6 +43,17 @@ class ArrowTest {
 
     @Test
     fun computeSequenceOfEitherWithoutStackOverflow() {
+        val ids =
+            System.nanoTime().let { started ->
+                val ids = plainItemIds()
+                val result = ids.map {
+                    val item = plainItem(it)
+                    it to item
+                }.filter { it.second.contains("bad") }.map { it.first }
+                println("Done in ${Duration.ofNanos(System.nanoTime() - started).toMillis()} ms in plain")
+                result
+            }
+
         val idsWithFp =
             System.nanoTime().let { started ->
                 val result = getItemIds().flatMap {
@@ -59,18 +70,6 @@ class ArrowTest {
             }
         assertTrue(idsWithFp.isRight())
         assertTrue(idsWithFp.getOrElse { fail("never") }.isNotEmpty())
-
-        val ids =
-            System.nanoTime().let { started ->
-                val ids = plainItemIds()
-                val result = ids.map {
-                    val item = plainItem(it)
-                    it to item
-                }.filter { it.second.contains("bad") }.map { it.first }
-                println("Done in ${Duration.ofNanos(System.nanoTime() - started).toMillis()} ms in plain")
-                result
-            }
-
         assertEquals(ids, idsWithFp.getOrElse { fail("never") })
     }
 }
