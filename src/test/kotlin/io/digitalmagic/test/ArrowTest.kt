@@ -2,6 +2,7 @@ package io.digitalmagic.test
 
 import arrow.core.*
 import arrow.core.extensions.fx
+import java.time.Duration
 import kotlin.test.*
 
 typealias CallResult<T> = Either<Throwable, T>
@@ -17,13 +18,15 @@ inline fun<reified T> Iterable<CallResult<T>>.sequence(): CallResult<List<T>> =
 
 class ArrowTest {
 
-    fun getItemIds(): CallResult<List<Int>> = (1 until 100000).toList().right()
-
-    fun getItem(id: Int): CallResult<String> =
+    fun plainItemIds(): List<Int> = (1 until 100000).toList()
+    fun plainItem(id: Int): String =
         when {
             id % 17 == 0 -> "$id is bad"
             else -> "$id is good"
-        }.right()
+        }
+
+    fun getItemIds(): CallResult<List<Int>> = plainItemIds().right()
+    fun getItem(id: Int): CallResult<String> = plainItem(id).right()
 
     @Test
     fun computeSequenceOfEitherWithFxLeadsToStackoverflow() {
@@ -40,16 +43,34 @@ class ArrowTest {
 
     @Test
     fun computeSequenceOfEitherWithoutStackOverflow() {
-        val ids = getItemIds().flatMap {
-            it.map { id ->
-                getItem(id).map {
-                    id to it
+        val idsWithFp =
+            System.nanoTime().let { started ->
+                val result = getItemIds().flatMap {
+                    it.map { id ->
+                        getItem(id).map {
+                            id to it
+                        }
+                    }.sequence().map {
+                        it.filter { it.second.contains("bad") }.map { it.first }
+                    }
                 }
-            }.sequence().map {
-                it.filter { it.second.contains("bad") }.map { it.first }
+                println("Done in ${Duration.ofNanos(System.nanoTime() - started).toMillis()} ms in FP")
+                result
             }
-        }
-        assertTrue(ids.isRight())
-        assertTrue(ids.getOrElse { fail("never") }.isNotEmpty())
+        assertTrue(idsWithFp.isRight())
+        assertTrue(idsWithFp.getOrElse { fail("never") }.isNotEmpty())
+
+        val ids =
+            System.nanoTime().let { started ->
+                val ids = plainItemIds()
+                val result = ids.map {
+                    val item = plainItem(it)
+                    it to item
+                }.filter { it.second.contains("bad") }.map { it.first }
+                println("Done in ${Duration.ofNanos(System.nanoTime() - started).toMillis()} ms in plain")
+                result
+            }
+
+        assertEquals(ids, idsWithFp.getOrElse { fail("never") })
     }
 }
