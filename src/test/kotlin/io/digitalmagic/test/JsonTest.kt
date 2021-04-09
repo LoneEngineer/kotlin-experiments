@@ -1,13 +1,15 @@
 package io.digitalmagic.test
 
-import com.fasterxml.jackson.annotation.JsonSubTypes
-import com.fasterxml.jackson.annotation.JsonTypeInfo
-import com.fasterxml.jackson.annotation.JsonUnwrapped
-import com.fasterxml.jackson.annotation.JsonValue
+import com.fasterxml.jackson.annotation.*
 import java.util.NoSuchElementException
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import kotlin.test.*
+
+data class Value(@JsonValue val x: String, val b: Boolean = false) {
+    @JsonCreator
+    constructor(x: String) : this(x, false)
+}
 
 data class B(val x: Int)
 data class C(@JsonUnwrapped val b: B, val s: String)
@@ -53,6 +55,17 @@ sealed class Base {
 }
 
 class JsonTest {
+    @Test
+    fun jsonValueWithMultipleFields() {
+        val x = Value("ho", true)
+        val jsonrep = Jackson.stringify(x)
+        assertEquals("\"ho\"", jsonrep)
+
+        val y = Jackson.parse(jsonrep, Value::class.java)
+        assertEquals(x.x, y.x)
+        assertFalse(y.b)
+    }
+
     @Test
     fun unwrappedDoesNotWorkWithDataClass() {
         val example = C(B(42), "yes")
