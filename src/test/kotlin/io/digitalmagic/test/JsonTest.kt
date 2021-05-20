@@ -54,7 +54,54 @@ sealed class Base {
     data class ChildB(val data: Int): Base()
 }
 
+data class Container1(val items: List<Base>)
+data class Container2(val items: List<Base>, val moreData: Boolean)
+data class Container3<T>(val items: List<T>, val moreData: Boolean)
+
 class JsonTest {
+
+    @Test
+    fun serializePolymorphicListInJackson() {
+        fun aList(): List<Base> = listOf(Base.ChildA("child-a"), Base.ChildB(10))
+        fun container3(): Container3<Base> = Container3(aList(), true)
+
+        run {
+            val jsonContainer1 = Jackson.stringify(aList())
+            assertTrue(jsonContainer1.contains("\"type\" : \"child-a\""))
+            assertTrue(jsonContainer1.contains("\"data\" : 10"))
+            // type-info is missing - jackson's 'feature'
+            assertFalse(jsonContainer1.contains("\"type\" : \"A\""))
+            assertFalse(jsonContainer1.contains("\"type\" : \"B\""))
+        }
+
+        run {
+            val jsonContainer1 = Jackson.stringify(Container1(aList()))
+            assertTrue(jsonContainer1.contains("\"type\" : \"child-a\""))
+            assertTrue(jsonContainer1.contains("\"data\" : 10"))
+            // type-info
+            assertTrue(jsonContainer1.contains("\"type\" : \"A\""))
+            assertTrue(jsonContainer1.contains("\"type\" : \"B\""))
+        }
+
+        run {
+            val jsonContainer2 = Jackson.stringify(Container2(aList(), true))
+            assertTrue(jsonContainer2.contains("\"type\" : \"child-a\""))
+            assertTrue(jsonContainer2.contains("\"data\" : 10"))
+            // type-info
+            assertTrue(jsonContainer2.contains("\"type\" : \"A\""))
+            assertTrue(jsonContainer2.contains("\"type\" : \"B\""))
+        }
+
+        run {
+            val jsonContainer2 = Jackson.stringify(container3())
+            assertTrue(jsonContainer2.contains("\"type\" : \"child-a\""))
+            assertTrue(jsonContainer2.contains("\"data\" : 10"))
+            // type-info is missing - jackson's 'feature'
+            assertFalse(jsonContainer2.contains("\"type\" : \"A\""))
+            assertFalse(jsonContainer2.contains("\"type\" : \"B\""))
+        }
+    }
+
     @Test
     fun jsonValueWithMultipleFields() {
         val x = Value("ho", true)
