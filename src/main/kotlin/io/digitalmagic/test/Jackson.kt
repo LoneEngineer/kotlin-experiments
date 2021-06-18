@@ -10,13 +10,13 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import org.zalando.jackson.datatype.money.MoneyModule
+//import org.zalando.jackson.datatype.money.MoneyModule
 
 object Jackson {
     private val configureObjectMapper: ObjectMapper.() -> Unit = {
         registerModule(Jdk8Module())
             .registerModule(JavaTimeModule())
-            .registerModule(MoneyModule())
+//            .registerModule(MoneyModule())
             .setSerializationInclusion(JsonInclude.Include.ALWAYS)
             .enable(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN)
             .enable(SerializationFeature.INDENT_OUTPUT)

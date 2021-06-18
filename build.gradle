@@ -14,11 +14,13 @@ buildscript {
 plugins {
     id 'org.jetbrains.kotlin.jvm' version "$kotlin_version"
     id 'org.jetbrains.kotlin.plugin.serialization' version "$kotlin_version"
+    id "me.champeau.gradle.jmh" version "0.5.3"
 }
 
 apply plugin: 'application'
 apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'com.adarshr.test-logger'
+apply plugin: 'me.champeau.gradle.jmh'
 
 group 'io.digital-magic'
 version '1.0'
@@ -64,7 +66,7 @@ repositories {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    implementation "org.javamoney:moneta:$moneta_version"
+    //implementation "org.javamoney:moneta:$moneta_version"
 
     // FP
     implementation "io.arrow-kt:arrow-core-data:$arrow_version"
@@ -80,7 +82,7 @@ dependencies {
     implementation "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:$jackson_version"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jackson_version"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version"
-    implementation "org.zalando:jackson-datatype-money:${jackson_datatype_money_version}"
+    //implementation "org.zalando:jackson-datatype-money:${jackson_datatype_money_version}"
 
     // DI
     implementation "org.koin:koin-core:$koin_version"
@@ -116,4 +118,7 @@ dependencies {
     implementation "org.liquibase:liquibase-core:$liquibase_version"
     testImplementation "com.h2database:h2:$h2_version"
     testImplementation "org.testcontainers:testcontainers:$testcontainers_version"
+
+    jmh "org.openjdk.jmh:jmh-core:$jmh_version"
+    jmh "org.openjdk.jmh:jmh-generator-annprocess:$jmh_version"
 }

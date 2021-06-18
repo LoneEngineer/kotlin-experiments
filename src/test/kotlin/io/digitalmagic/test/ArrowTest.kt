@@ -1,7 +1,10 @@
 package io.digitalmagic.test
 
 import arrow.core.*
+import arrow.core.computations.either
 import arrow.core.extensions.fx
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import java.time.Duration
 import kotlin.test.*
 
@@ -41,8 +44,18 @@ class ArrowTest {
         }
     }
 
-    @Test
+    @Test // see jmh package for precise performance testing
     fun computeSequenceOfEitherWithoutStackOverflow() {
+        System.nanoTime().let { started ->
+            val ids = plainItemIds()
+            val result = ids.map {
+                val item = plainItem(it)
+                it to item
+            }.filter { it.second.contains("bad") }.map { it.first }
+            println("Done in ${Duration.ofNanos(System.nanoTime() - started).toMillis()} ms in warm-up")
+            result
+        }
+
         val ids =
             System.nanoTime().let { started ->
                 val ids = plainItemIds()
@@ -68,8 +81,38 @@ class ArrowTest {
                 println("Done in ${Duration.ofNanos(System.nanoTime() - started).toMillis()} ms in FP")
                 result
             }
-        assertTrue(idsWithFp.isRight())
-        assertTrue(idsWithFp.getOrElse { fail("never") }.isNotEmpty())
-        assertEquals(ids, idsWithFp.getOrElse { fail("never") })
+
+        val idsEitherBind =
+            System.nanoTime().let { started ->
+                val result = runBlocking(Dispatchers.Unconfined) {
+                    either<Throwable, List<Int>> {
+                        val ids = getItemIds().bind()
+                        val items = ids.map { id -> id to getItem(id).bind() }
+                        items.filter { it.second.contains("bad") }.map { it.first }
+                    }
+                }
+                println("Done in ${Duration.ofNanos(System.nanoTime() - started).toMillis()} ms in either bind")
+                result
+            }
+
+        val idsEitherBind2 =
+            System.nanoTime().let { started ->
+                val result = runBlocking(Dispatchers.Unconfined) {
+                    either<Throwable, List<Int>> {
+                        val ids = getItemIds().bind()
+                        val items = ids.map { id -> getItem(id).map { id to it } }.sequence().bind()
+                        items.filter { it.second.contains("bad") }.map { it.first }
+                    }
+                }
+                println("Done in ${Duration.ofNanos(System.nanoTime() - started).toMillis()} ms in either sequence bind")
+                result
+            }
+
+        assertNotNull(idsEitherBind.orNull())
+        assertNotNull(idsEitherBind2.orNull())
+        assertNotNull(idsWithFp.orNull())
+        assertEquals(ids, idsWithFp.orNull())
+        assertEquals(ids, idsEitherBind.orNull())
+        assertEquals(ids, idsEitherBind2.orNull())
     }
 }
