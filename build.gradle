@@ -85,9 +85,9 @@ dependencies {
     //implementation "org.zalando:jackson-datatype-money:${jackson_datatype_money_version}"
 
     // DI
-    implementation "org.koin:koin-core:$koin_version"
-    implementation "org.koin:koin-ktor:$koin_version"
-    testImplementation "org.koin:koin-test:$koin_version"
+    implementation "io.insert-koin:koin-core:$koin_version"
+    implementation "io.insert-koin:koin-ktor:$koin_version"
+    testImplementation "io.insert-koin:koin-test:$koin_version"
 
     // http server
     implementation "io.ktor:ktor-server-core:$ktor_version"

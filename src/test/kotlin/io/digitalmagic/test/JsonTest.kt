@@ -58,7 +58,67 @@ data class Container1(val items: List<Base>)
 data class Container2(val items: List<Base>, val moreData: Boolean)
 data class Container3<T>(val items: List<T>, val moreData: Boolean)
 
+@Serializable
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+sealed class A {
+    @JsonTypeName("B")
+    @Serializable
+    object B: A()
+    @JsonTypeName("C")
+    @Serializable
+    object C: A()
+    @JsonTypeName("D")
+    @Serializable
+    data class D(val i: Int): A()
+}
+
 class JsonTest {
+
+    @Test // works in Kotlin 1.3.x only
+    fun deserializationOfObjectIsBrokenInJackson() {
+        val x1 = A.B
+        val x2 = Jackson.parse(Jackson.stringify(x1), A::class.java)
+        val x3 = A.C
+
+        /*
+        listOf(x1,x2,x3).forEach {
+            when(it) {
+                A.B -> println("b ${it as Any}")
+                A.C -> println("c ${it as Any}")
+                is A.D -> println("d ${it as Any}")
+                else -> println("? ${it as Any}")
+            }
+        }
+         */
+        assertEquals(A.B, x1)
+        assertFailsWith<AssertionError> {
+            assertEquals(A.B, x2)
+        }
+        assertFailsWith<AssertionError> {
+            assertEquals(x1, x2)
+        }
+    }
+
+    @Test
+    fun deserializationOfObjectWithKotlinx() {
+        val x1: A = A.B
+        val x2: A = Json.decodeFromString<A>(Json.encodeToString(x1))
+        val x3: A = A.C
+
+        /*
+        listOf(x1,x2,x3).forEach {
+            when(it) {
+                A.B -> println("b ${it as Any}")
+                A.C -> println("c ${it as Any}")
+                is A.D -> println("d ${it as Any}")
+                else -> println("? ${it as Any}")
+            }
+        }
+         */
+        assertEquals(A.B, x1)
+        assertEquals(A.B, x2)
+        assertEquals(x1, x2)
+    }
 
     @Test
     fun serializePolymorphicListInJackson() {
