@@ -72,7 +72,27 @@ sealed class A {
     data class D(val i: Int): A()
 }
 
+object X
+
 class JsonTest {
+    @Test // works in Kotlin 1.3.x only
+    fun deserializationOfObjectIsBrokenInJackson2() {
+        val x1 = X
+        val x2 = Jackson.parse(Jackson.stringify(x1), X::class.java)
+
+        /*
+        listOf(x1,x2).forEach {
+            when(it) {
+                X -> println("x ${it as Any}")
+                else -> println("? ${it as Any}")
+            }
+        }
+
+         */
+        assertEquals(X, x1)
+        assertEquals(X, x2)
+        assertEquals(x1, x2)
+    }
 
     @Test // works in Kotlin 1.3.x only
     fun deserializationOfObjectIsBrokenInJackson() {
@@ -91,12 +111,8 @@ class JsonTest {
         }
          */
         assertEquals(A.B, x1)
-        assertFailsWith<AssertionError> {
-            assertEquals(A.B, x2)
-        }
-        assertFailsWith<AssertionError> {
-            assertEquals(x1, x2)
-        }
+        assertEquals(A.B, x2)
+        assertEquals(x1, x2)
     }
 
     @Test
