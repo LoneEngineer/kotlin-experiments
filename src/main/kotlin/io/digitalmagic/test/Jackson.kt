@@ -11,13 +11,12 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.SingletonSupport
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.jsonMapper
 
 //import org.zalando.jackson.datatype.money.MoneyModule
 
 object Jackson {
-    private val configureObjectMapper: ObjectMapper.() -> Unit = {
+    val configureObjectMapper: ObjectMapper.() -> Unit = {
         registerModule(Jdk8Module())
             .registerModule(JavaTimeModule())
             .registerModule(KotlinModule(singletonSupport = SingletonSupport.CANONICALIZE))
