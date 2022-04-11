@@ -2,8 +2,6 @@ package io.digitalmagic.test
 
 import arrow.core.*
 import arrow.core.computations.either
-import arrow.core.extensions.fx
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import java.time.Duration
 import kotlin.test.*
@@ -11,7 +9,7 @@ import kotlin.test.*
 typealias CallResult<T> = Either<Throwable, T>
 
 inline fun<reified T> Iterable<CallResult<T>>.sequence(): CallResult<List<T>> =
-    fold<CallResult<T>, CallResult<List<T>>>(Right(emptyList())) { accumulator, elem ->
+    fold<CallResult<T>, CallResult<List<T>>>(Either.Right(emptyList())) { accumulator, elem ->
         accumulator.flatMap { a ->
             elem.map { e ->
                 a + e
@@ -30,19 +28,6 @@ class ArrowTest {
 
     fun getItemIds(): CallResult<List<Int>> = plainItemIds().right()
     fun getItem(id: Int): CallResult<String> = plainItem(id).right()
-
-    @Test
-    fun computeSequenceOfEitherWithFxLeadsToStackoverflow() {
-        assertFailsWith(StackOverflowError::class) {
-            CallResult.fx<Throwable, List<Int>> {
-                val ids = getItemIds().bind()
-                ids.filter {
-                    val item = getItem(it).bind()
-                    item.contains("bad")
-                }
-            }
-        }
-    }
 
     @Test // see jmh package for precise performance testing
     fun computeSequenceOfEitherWithoutStackOverflow() {
@@ -82,9 +67,9 @@ class ArrowTest {
                 result
             }
 
-        val idsEitherBind =
+        val idsEitherBind0 =
             System.nanoTime().let { started ->
-                val result = runBlocking(Dispatchers.Unconfined) {
+                val result = runBlocking {
                     either<Throwable, List<Int>> {
                         val ids = getItemIds().bind()
                         val items = ids.map { id -> id to getItem(id).bind() }
@@ -95,9 +80,22 @@ class ArrowTest {
                 result
             }
 
+        val idsEitherBind1 =
+            System.nanoTime().let { started ->
+                val result = runBlocking {
+                    either.eager<Throwable, List<Int>> {
+                        val ids = getItemIds().bind()
+                        val items = ids.map { id -> id to getItem(id).bind() }
+                        items.filter { it.second.contains("bad") }.map { it.first }
+                    }
+                }
+                println("Done in ${Duration.ofNanos(System.nanoTime() - started).toMillis()} ms in either.eiger bind")
+                result
+            }
+
         val idsEitherBind2 =
             System.nanoTime().let { started ->
-                val result = runBlocking(Dispatchers.Unconfined) {
+                val result = runBlocking {
                     either<Throwable, List<Int>> {
                         val ids = getItemIds().bind()
                         val items = ids.map { id -> getItem(id).map { id to it } }.sequence().bind()
@@ -108,11 +106,26 @@ class ArrowTest {
                 result
             }
 
-        assertNotNull(idsEitherBind.orNull())
+        val idsEitherBind3 =
+            System.nanoTime().let { started ->
+                val result = either.eager<Throwable, List<Int>> {
+                    val ids = getItemIds().bind()
+                    val items = ids.map { id -> getItem(id).map { id to it } }.sequence().bind()
+                    items.filter { it.second.contains("bad") }.map { it.first }
+                }
+                println("Done in ${Duration.ofNanos(System.nanoTime() - started).toMillis()} ms in either.eiger sequence bind")
+                result
+            }
+
+        assertNotNull(idsEitherBind0.orNull())
+        assertNotNull(idsEitherBind1.orNull())
         assertNotNull(idsEitherBind2.orNull())
+        assertNotNull(idsEitherBind3.orNull())
         assertNotNull(idsWithFp.orNull())
         assertEquals(ids, idsWithFp.orNull())
-        assertEquals(ids, idsEitherBind.orNull())
+        assertEquals(ids, idsEitherBind0.orNull())
+        assertEquals(ids, idsEitherBind1.orNull())
         assertEquals(ids, idsEitherBind2.orNull())
+        assertEquals(ids, idsEitherBind3.orNull())
     }
 }

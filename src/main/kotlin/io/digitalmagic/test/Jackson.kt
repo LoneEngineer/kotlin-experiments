@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.SingletonSupport
 import com.fasterxml.jackson.module.kotlin.jsonMapper
@@ -19,7 +20,7 @@ object Jackson {
     val configureObjectMapper: ObjectMapper.() -> Unit = {
         registerModule(Jdk8Module())
             .registerModule(JavaTimeModule())
-            .registerModule(KotlinModule(singletonSupport = SingletonSupport.CANONICALIZE))
+            .registerModule(KotlinModule.Builder().configure(KotlinFeature.SingletonSupport, true).build())
 //            .registerModule(MoneyModule())
             .setSerializationInclusion(JsonInclude.Include.ALWAYS)
             .enable(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN)

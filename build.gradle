@@ -69,8 +69,7 @@ dependencies {
     //implementation "org.javamoney:moneta:$moneta_version"
 
     // FP
-    implementation "io.arrow-kt:arrow-core-data:$arrow_version"
-    implementation "io.arrow-kt:arrow-fx:$arrow_version"
+    implementation "io.arrow-kt:arrow-core:$arrow_version"
 
     // JSON serialization
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlin_serialization_version"

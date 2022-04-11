@@ -50,8 +50,8 @@ open class ArrowPerfTest {
     @Warmup(iterations = 5, batchSize = 10)
     @Measurement(iterations = 10, batchSize = 20)
     @BenchmarkMode(Mode.Throughput)
-    fun eitherBind1() {
-        runBlocking(Dispatchers.Unconfined) {
+    fun eitherBind() {
+        runBlocking {
             either<Throwable, List<Int>> {
                 val ids = getItemIds().bind()
                 val items = ids.map { id -> id to getItem(id).bind() }
@@ -64,13 +64,37 @@ open class ArrowPerfTest {
     @Warmup(iterations = 5, batchSize = 10)
     @Measurement(iterations = 10, batchSize = 20)
     @BenchmarkMode(Mode.Throughput)
-    fun eitherBind2() {
-        runBlocking(Dispatchers.Unconfined) {
+    fun eitherEager() {
+        either.eager<Throwable, List<Int>> {
+            val ids = getItemIds().bind()
+            val items = ids.map { id -> id to getItem(id).bind() }
+            items.filter { it.second.contains("bad") }.map { it.first }
+        }
+    }
+
+    @Benchmark
+    @Warmup(iterations = 5, batchSize = 10)
+    @Measurement(iterations = 10, batchSize = 20)
+    @BenchmarkMode(Mode.Throughput)
+    fun eitherBindAndSequence() {
+        runBlocking {
             either<Throwable, List<Int>> {
                 val ids = getItemIds().bind()
                 val items = ids.map { id -> getItem(id).map { id to it } }.sequence().bind()
                 items.filter { it.second.contains("bad") }.map { it.first }
             }
+        }
+    }
+
+    @Benchmark
+    @Warmup(iterations = 5, batchSize = 10)
+    @Measurement(iterations = 10, batchSize = 20)
+    @BenchmarkMode(Mode.Throughput)
+    fun eitherEagerAndSequence() {
+        either.eager<Throwable, List<Int>> {
+            val ids = getItemIds().bind()
+            val items = ids.map { id -> getItem(id).map { id to it } }.sequence().bind()
+            items.filter { it.second.contains("bad") }.map { it.first }
         }
     }
 }
