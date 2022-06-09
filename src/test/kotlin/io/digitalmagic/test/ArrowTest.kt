@@ -82,12 +82,10 @@ class ArrowTest {
 
         val idsEitherBind1 =
             System.nanoTime().let { started ->
-                val result = runBlocking {
-                    either.eager<Throwable, List<Int>> {
-                        val ids = getItemIds().bind()
-                        val items = ids.map { id -> id to getItem(id).bind() }
-                        items.filter { it.second.contains("bad") }.map { it.first }
-                    }
+                val result = either.eager<Throwable, List<Int>> {
+                    val ids = getItemIds().bind()
+                    val items = ids.map { id -> id to getItem(id).bind() }
+                    items.filter { it.second.contains("bad") }.map { it.first }
                 }
                 println("Done in ${Duration.ofNanos(System.nanoTime() - started).toMillis()} ms in either.eiger bind")
                 result
