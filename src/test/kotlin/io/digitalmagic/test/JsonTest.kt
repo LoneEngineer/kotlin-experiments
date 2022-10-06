@@ -1,6 +1,7 @@
 package io.digitalmagic.test
 
 import com.fasterxml.jackson.annotation.*
+import com.fasterxml.jackson.databind.exc.InvalidTypeIdException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import java.util.NoSuchElementException
@@ -69,11 +70,36 @@ sealed class A {
     @JsonTypeName("C")
     @Serializable
     object C: A()
+
+    @Serializable
+    sealed class D(): A()
+    @JsonTypeName("DA")
+    @Serializable
+    object DA: D()
+
+    @JsonTypeName("DB")
+    @Serializable
+    object DB: D()
 }
 
 object X
 
 class JsonTest {
+
+    @Test
+    fun deserializeDeepHierarchy() {
+        val da: A = A.DA
+
+        run {
+            val json = Jackson.stringify(da)
+            assertEquals(da, Jackson.parse(json, A::class.java))
+        }
+        run {
+            val json = Json.encodeToString(da)
+            assertEquals(da, Json.decodeFromString<A>(json))
+        }
+    }
+
     @Test
     fun deserializationOfPlainObjectRequiresSpecialSetupInJackson2_11_plus() {
         val x1 = X
