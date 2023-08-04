@@ -1,12 +1,14 @@
 package io.digitalmagic.test
 
 import com.fasterxml.jackson.annotation.*
+import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.exc.InvalidTypeIdException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import java.util.NoSuchElementException
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
+import java.nio.file.WatchEvent
 import kotlin.test.*
 
 data class Value(@JsonValue val x: String, val b: Boolean = false) {
@@ -333,5 +335,43 @@ com.fasterxml.jackson.databind.exc.InvalidDefinitionException: Cannot define Cre
             assertEquals("Bar", result6.country)
         }
         assertEquals(null, result6.city)
+    }
+
+    @Serializable
+    data class DataWithBool(val abc: String, val xyz: Boolean)
+    @Test
+    fun defaultBoolInJackson() {
+        assertEquals(true, Jackson.parse("""
+                { "abc": "48kj3h43hgo5i3", "xyz": true }
+            """.trimIndent(), DataWithBool::class.java).xyz)
+        assertFailsWith(JsonMappingException::class) {
+            Jackson.parse("""
+                { "abc": "48kj3h43hgo5i3", "xyz": "ok" }
+            """.trimIndent(), DataWithBool::class.java)
+        }
+        assertFailsWith(JsonMappingException::class) {
+            val obj = Jackson.parse("""
+                { "abc": "48kj3h43hgo5i3" }
+            """.trimIndent(), DataWithBool::class.java)
+            assertEquals(false, obj.xyz)
+        }
+    }
+
+    @Test
+    fun defaultBoolInKotlinx() {
+        assertEquals(true, Json.decodeFromString<DataWithBool>("""
+                { "abc": "48kj3h43hgo5i3", "xyz": true }
+            """.trimIndent()).xyz)
+        assertFailsWith(SerializationException::class) {
+            Json.decodeFromString<DataWithBool>("""
+                { "abc": "48kj3h43hgo5i3", "xyz": "ok" }
+            """.trimIndent())
+        }
+        assertFailsWith(SerializationException::class) {
+            val obj = Json.decodeFromString<DataWithBool>("""
+                    { "abc": "48kj3h43hgo5i3" }
+                """.trimIndent())
+            println(obj)
+        }
     }
 }

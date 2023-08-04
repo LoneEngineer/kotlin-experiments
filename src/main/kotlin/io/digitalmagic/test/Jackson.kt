@@ -25,6 +25,7 @@ object Jackson {
             .setSerializationInclusion(JsonInclude.Include.ALWAYS)
             .enable(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN)
             .enable(SerializationFeature.INDENT_OUTPUT)
+            .enable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             .disable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS)
             .disable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE)
